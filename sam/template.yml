@@ -22,6 +22,7 @@ Metadata:
           - PixelDensity
           - PyramidLimit
           - ResolverTemplate
+          - DevEnv
       - Label:
           default: "CORS Configuration"
         Parameters:
@@ -215,7 +216,7 @@ Resources:
               - !Ref AWS::NoValue
           resolverTemplate: !Ref ResolverTemplate
           tiffBucket: !Ref SourceBucket
-          devEnv: !Ref devEnv
+          devEnv: !Ref DevEnv
     Metadata:
       BuildMethod: makefile
 Outputs:
