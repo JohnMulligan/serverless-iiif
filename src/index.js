@@ -99,7 +99,19 @@ const makeResponse = (result) => {
     .filter(({ property }) => result[property])
     .map(({ rel, property }) => `<${result[property]}>; rel=${rel}`);
   
-  const image_data=result.body
+  const res_body=result.body;
+  
+  const devEnv = process.env.devEnv;
+  
+  let image_data;
+  
+  if (devEnv=="true") {
+    console.log("RUNNING IN DEVELOPMENT MODE")
+    image_data=Buffer.from(res_body).toString('base64') 
+  } else {
+    image_data=res_body
+  };
+  
   return {
     statusCode: 200,
     headers: {
@@ -107,11 +119,7 @@ const makeResponse = (result) => {
       Link: linkHeaders.length > 0 ? linkHeaders.join(',') : undefined
     },
     isBase64Encoded: false,
-//       dev
-      body: Buffer.from(image_data).toString('base64')
-//       prod
-//       body: image_data
-
+    body: image_data
   }
 };
 

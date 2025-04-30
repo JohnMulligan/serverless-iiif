@@ -112,6 +112,13 @@ Parameters:
   SourceBucket:
     Type: String
     Description: Name of bucket containing source images
+  DevEnv:
+    Type: String
+    Description: Indicates whether this is a development deployment
+    AllowedValues:
+      - false
+      - true
+    Default: false
 Conditions:
   UseBuiltInDependencies:
     Fn::Equals: [!Ref SharpLayer, "INTERNAL"]
@@ -208,6 +215,7 @@ Resources:
               - !Ref AWS::NoValue
           resolverTemplate: !Ref ResolverTemplate
           tiffBucket: !Ref SourceBucket
+          devEnv: !Ref devEnv
     Metadata:
       BuildMethod: makefile
 Outputs:

@@ -20,6 +20,6 @@ default:
         PixelDensity="0"
         Preflight="false"
         ResolverTemplate="%s.tif"
-        SharpLayer=""
+        SharpLayer="INTERNAL"
         SourceBucket=""
       image_repositories: []
