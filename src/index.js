@@ -98,7 +98,8 @@ const makeResponse = (result) => {
     })
     .filter(({ property }) => result[property])
     .map(({ rel, property }) => `<${result[property]}>; rel=${rel}`);
-
+  
+  const image_data=result.body
   return {
     statusCode: 200,
     headers: {
@@ -106,8 +107,12 @@ const makeResponse = (result) => {
       Link: linkHeaders.length > 0 ? linkHeaders.join(',') : undefined
     },
     isBase64Encoded: false,
-    body: result.body
-  };
+//       dev
+      body: Buffer.from(image_data).toString('base64')
+//       prod
+//       body: image_data
+
+  }
 };
 
 module.exports = {

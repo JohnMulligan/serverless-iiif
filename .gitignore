@@ -18,6 +18,11 @@ node_modules
 .env
 env.json
 
+# Semi-secret testing
+event.json
+*.jpg
+*.png
+
 # Terraform
 .terraform*
 *.tfstate*
