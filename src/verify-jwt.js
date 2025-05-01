@@ -110,37 +110,20 @@ function _base64urlDecode(str) {
     return Buffer.from(str, 'base64url')
 }
 
-const authorize = async (querystring) => {
-  console.log("QUERYSTRING",querystring)
+const authorize = async (JWT) => {
   if(!shaKey) {
       response401['statusDescription']="No Secret Key"
       return response401;
   }
-  
-//   console.log("------>",querystring)
-  
-//   const response200 = {
-//     statusCode: 200,
-//     statusDescription: 'Hooray'
-//   };
-  const devEnv = process.env.devEnv;
-  let JWT;
-  if (devEnv=="true") {
-    JWT=querystring.jwt.value;
-  } else {
-    JWT=querystring.jwt;
-  };
-  
-  console.log("JWT",JWT)
 
-//   try{ 
+  try{ 
       jwt_decode(JWT, shaKey);
-//   }
-//   catch(e) {
-//       response401['statusDescription']="DID NOT DECODE JWT"
-//       return response401;
-//   }
-  console.log("200",response200)
+  }
+  catch(e) {
+      console.log(e)
+      response401['statusDescription']=e.message
+      return response401;
+  }
   return response200;
 }
 

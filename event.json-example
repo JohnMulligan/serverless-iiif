@@ -1,15 +1,12 @@
 {
   "version":"2.0",
-  "rawpath":"/",
+  "rawpath":"",
   "requestContext": {
-    "http": {
-        "method": "GET",
-        "path": "/iiif/3/IMAGE_NAME/IMAGE_CROP/PIXELS/ROTATION/COLOR.jpg",
-        "protocol": "HTTP/1.1",
-        "sourceIp": "123.123.123.123",
-        "userAgent": "agent"
-      }
-    },
-      "headers":[
-		]
+    "http":{
+      "path": "/iiif/3/IMG_ID/CROP/SAMPLE/ROTATE/COLOR.jpg"
+    }
+  },
+  "headers":{
+    "authorization":""
+  }
 }
