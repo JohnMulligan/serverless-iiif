@@ -36,6 +36,7 @@ Metadata:
         Parameters:
           - ForceHost
           - Preflight
+          - ShaKey
 Parameters:
   CorsAllowCredentials:
     Type: String
@@ -120,6 +121,10 @@ Parameters:
       - false
       - true
     Default: false
+  ShaKey:
+    Type: String
+    Description: Internal SHA key for authentication
+    Default: ""
 Conditions:
   UseBuiltInDependencies:
     Fn::Equals: [!Ref SharpLayer, "INTERNAL"]
@@ -217,6 +222,7 @@ Resources:
           resolverTemplate: !Ref ResolverTemplate
           tiffBucket: !Ref SourceBucket
           devEnv: !Ref DevEnv
+          shaKey: !Ref ShaKey
     Metadata:
       BuildMethod: makefile
 Outputs:

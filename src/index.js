@@ -1,6 +1,7 @@
 const IIIF = require('iiif-processor');
 const debug = require('debug')('serverless-iiif:lambda');
 const helpers = require('./helpers');
+const auth = require('./verify-jwt');
 const resolvers = require('./resolvers');
 const { errorHandler } = require('./error');
 const { streamifyResponse } = require('./streamify');
@@ -10,6 +11,49 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   const { addCorsHeaders, eventPath, fileMissing } = helpers;
 
   context.callbackWaitsForEmptyEventLoop = false;
+  
+//   check to see if we are authenticating with a url query jwt, and if so, run it
+  const shaKey = process.env.shaKey;
+//   return {statusCode:401,body:event}
+  
+  const devEnv = process.env.devEnv;
+//   console.log(event)
+  let querystring;
+  if (devEnv=="true") {
+    console.log("DEVENV")
+//     console.log(event.requestContext)
+//     console.log(event.requestContext.http)
+    querystring = event.requestContext.http.querystring
+  } else {
+    console.log("NOTDEVENV")
+    console.log(event)
+    querystring=event.queryStringParameters
+//     console.log(event.rawQueryString)
+  };
+  
+//   return {"statusCode":200,"body":querystring}
+  console.log("querystring",querystring)
+  
+  
+  if(shaKey) {  
+    console.log("USING SHA KEY")
+    if (!querystring) {
+      const resp={
+        "statusCode":401,
+        "statusDescription": 'No JWT'
+      }
+      return resp
+    }
+    const authorized=await auth.authorize(querystring);
+    if (authorized.statusCode!=200){
+      const resp={
+        "statusCode":403,
+        "statusDescription": 'Unauthorized'
+      }
+      return resp
+    }
+  }
+
 
   let response;
   if (event.requestContext?.http?.method === 'OPTIONS') {
