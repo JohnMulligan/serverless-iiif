@@ -209,6 +209,7 @@ Resources:
           corsExposeHeaders: !Ref CorsExposeHeaders
           corsMaxAge: !Ref CorsMaxAge
           waterMarkS3Key: !Ref WaterMarkS3Key
+          density:
             Fn::If:
               - UsePixelDensity
               - !Ref PixelDensity
