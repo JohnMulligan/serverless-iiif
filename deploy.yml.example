@@ -22,4 +22,5 @@ default:
         ResolverTemplate="%s.tif"
         SharpLayer="INTERNAL"
         SourceBucket=""
+        DevEnv="false"
       image_repositories: []

@@ -28,8 +28,25 @@ You will find the image you requested at ```res.jpg```.
 
 --------
 
-Note:
+## New environment variables
+
+The below environment variables have been added to the build. They are explained elsewehere in this readme.
+
+* ```devEnv```: true or false. designates production or development deployment.
+* ```shaKey```: takes a string to decrypt authorization requests
+
+--------
+
+## Authorization
+
+The AWS method of authorizing requests for lambda functions is to set up a separate authentication service, typically with API Gateway.
+
+As an alternative to this, we've added the ability to deploy with an sha key in order to accept requests with authorization headers. If the environment has a value for ```shaKey```, then the function looks for an ```authorization``` header, and throws a 401 error if it does not receive it. If it does find an authorization key/value pair, it uses it to run through a validation of the header.
+
+--------
+
+## Note on image encoding:
 
 Re-encoding of the output appears to be necessary, as this issue seems to still be live: https://github.com/aws/aws-sam-cli/issues/6369
 
-Therefore -- until I figure out how to do this with an environment variable -- you should switch on the dev version of the response body, currently available on line 110 of ```src/index.js```. Please always turn it off before you deploy.
+Therefore, I've introduced a new environment variable, ```devEnv``` which can be set to ```"true"``` or ```"false"``` (strings). It defaults to ```"false"``` for deployment, but you can change that for local development in your ```env.json``` file.
