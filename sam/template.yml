@@ -37,6 +37,7 @@ Metadata:
           - ForceHost
           - Preflight
           - ShaKey
+          - WaterMarkS3Key
 Parameters:
   CorsAllowCredentials:
     Type: String
@@ -125,6 +126,10 @@ Parameters:
     Type: String
     Description: Internal SHA key for authentication
     Default: ""
+  WaterMarkS3Key:
+    Type: String
+    Description: Optional key for the watermark image
+    Default: ""
 Conditions:
   UseBuiltInDependencies:
     Fn::Equals: [!Ref SharpLayer, "INTERNAL"]
@@ -203,7 +208,7 @@ Resources:
           corsAllowHeaders: !Ref CorsAllowHeaders
           corsExposeHeaders: !Ref CorsExposeHeaders
           corsMaxAge: !Ref CorsMaxAge
-          density:
+          waterMarkS3Key: !Ref WaterMarkS3Key
             Fn::If:
               - UsePixelDensity
               - !Ref PixelDensity
