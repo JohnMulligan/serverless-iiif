@@ -18,7 +18,7 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   const queryStringParameters = event.queryStringParameters;
 
   if (shaKey) {
-    console.log("USING SHA KEY");
+   
     const req_auth = event.headers.authorization;
     if (!req_auth) {
       const resp = {
@@ -166,8 +166,6 @@ const applyWatermark = async (imageBuffer) => {
         fit: "cover",
       })
       .toBuffer();
-
-    console.log("Logo Buffer: ", logoBuffer);
 
     return await sharp(imageBuffer)
       .composite([
