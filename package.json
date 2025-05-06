@@ -5,6 +5,7 @@
   "author": "Michael B. Klein",
   "license": "Apache-2.0",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "dotenv": "^16.0.3",
     "uri-js": "^4.4.1"
   },
