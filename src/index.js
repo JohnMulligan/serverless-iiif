@@ -5,6 +5,9 @@ const auth = require("./verify-jwt");
 const resolvers = require("./resolvers");
 const { errorHandler } = require("./error");
 const { streamifyResponse } = require("./streamify");
+
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+
 const sharp = require("sharp");
 
 const handleRequestFunc = streamifyResponse(async (event, context) => {
@@ -15,7 +18,7 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   const queryStringParameters = event.queryStringParameters;
 
   if (shaKey) {
-    console.log("USING SHA KEY");
+   
     const req_auth = event.headers.authorization;
     if (!req_auth) {
       const resp = {
@@ -132,12 +135,35 @@ const handleResourceRequestFunc = async (event, context) => {
   }
 };
 
+const s3 = new S3Client({ region: "us-east-1" });
+
 const applyWatermark = async (imageBuffer) => {
   try {
+    // Fetch the image from S3
+    const command = new GetObjectCommand({
+      Bucket: process.env.tiffBucket,
+      Key: "road_logo_white.svg",
+    });
 
-    const logoBuffer = await sharp("./R.O.A.D. Logomark.svg")
-      .resize(500, 500, {
-        fit: 'cover',
+    const streamToBuffer = async (stream) => {
+      const chunks = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    };
+
+    const { Body } = await s3.send(command);
+
+    const bodyBuffer =
+      Body instanceof Buffer ? Body : await streamToBuffer(Body);
+
+    const baseMetadata = await sharp(imageBuffer).metadata();
+    const logoBuffer = await sharp(bodyBuffer)
+      .resize({
+        width: Math.min(200, baseMetadata.width),
+        height: Math.min(200, baseMetadata.height),
+        fit: "cover",
       })
       .toBuffer();
 
@@ -145,7 +171,7 @@ const applyWatermark = async (imageBuffer) => {
       .composite([
         {
           input: logoBuffer,
-          gravity: 'center',
+          gravity: "center",
           blend: "over",
           opacity: 0.5,
         },
@@ -165,17 +191,8 @@ const makeResponse = async (result, event) => {
 
   let res_body = result.body;
 
-  const devEnv = process.env.devEnv;
-
-  let image_data;
-
-  if (devEnv == "true") {
-    console.log("RUNNING IN DEVELOPMENT MODE");
-    image_data = Buffer.from(res_body).toString("base64");
-  } else {
-    image_data = res_body;
-    image_data = await applyWatermark(image_data);
-  }
+  let image_data = res_body;
+  image_data = await applyWatermark(image_data);
 
   return {
     statusCode: 200,
