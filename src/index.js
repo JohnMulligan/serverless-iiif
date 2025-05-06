@@ -6,9 +6,7 @@ const resolvers = require("./resolvers");
 const { errorHandler } = require("./error");
 const { streamifyResponse } = require("./streamify");
 
-
-const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 const sharp = require("sharp");
 
@@ -144,9 +142,8 @@ const applyWatermark = async (imageBuffer) => {
     // Fetch the image from S3
     const command = new GetObjectCommand({
       Bucket: process.env.tiffBucket,
-      Key: "road_logomark_negative.png",
+      Key: "road_logo_white.svg",
     });
-
 
     const streamToBuffer = async (stream) => {
       const chunks = [];
@@ -155,22 +152,22 @@ const applyWatermark = async (imageBuffer) => {
       }
       return Buffer.concat(chunks);
     };
-    
 
     const { Body } = await s3.send(command);
 
-    const bodyBuffer = Body instanceof Buffer ? Body : await streamToBuffer(Body);
-    
+    const bodyBuffer =
+      Body instanceof Buffer ? Body : await streamToBuffer(Body);
+
     const baseMetadata = await sharp(imageBuffer).metadata();
     const logoBuffer = await sharp(bodyBuffer)
       .resize({
         width: Math.min(200, baseMetadata.width),
         height: Math.min(200, baseMetadata.height),
-        fit: "fill",
+        fit: "cover",
       })
       .toBuffer();
 
-      console.log("Logo Buffer: ", logoBuffer);
+    console.log("Logo Buffer: ", logoBuffer);
 
     return await sharp(imageBuffer)
       .composite([
@@ -182,13 +179,11 @@ const applyWatermark = async (imageBuffer) => {
         },
       ])
       .toBuffer();
-
   } catch (err) {
     console.error("Error applying watermark:", err);
     throw err;
   }
 };
-
 
 const makeResponse = async (result, event) => {
   const linkHeaders = ["canonical", "profile"]
@@ -198,16 +193,9 @@ const makeResponse = async (result, event) => {
 
   let res_body = result.body;
 
-  console.log("res_body: ", res_body);
+  let image_data = res_body;
+  image_data = await applyWatermark(image_data);
 
-  let image_data;
-
- 
-    image_data = res_body;
-    console.log("RUNNING IN PRODUCTION MODE");
-    console.log("image_data: ", image_data);
-    image_data = await applyWatermark(image_data);
-  
   return {
     statusCode: 200,
     headers: {
