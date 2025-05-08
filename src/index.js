@@ -18,7 +18,6 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   const queryStringParameters = event.queryStringParameters;
 
   if (shaKey) {
-   
     const req_auth = event.headers.authorization;
     if (!req_auth) {
       const resp = {
@@ -184,21 +183,21 @@ const handleResourceRequestFunc = async (event, context) => {
 
 const s3 = new S3Client({ region: "us-east-1" });
 
+const streamToBuffer = async (stream) => {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+};
+
 const applyWatermark = async (imageBuffer) => {
   try {
-    // Fetch the image from S3
+    //  Fetch the image from S3
     const command = new GetObjectCommand({
       Bucket: process.env.tiffBucket,
       Key: "road_logo_white.svg",
     });
-
-    const streamToBuffer = async (stream) => {
-      const chunks = [];
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
-      return Buffer.concat(chunks);
-    };
 
     const { Body } = await s3.send(command);
 
@@ -206,11 +205,13 @@ const applyWatermark = async (imageBuffer) => {
       Body instanceof Buffer ? Body : await streamToBuffer(Body);
 
     const baseMetadata = await sharp(imageBuffer).metadata();
+
+    // Resize the logo according to the calculated dimensions
     const logoBuffer = await sharp(bodyBuffer)
       .resize({
-        width: Math.min(200, baseMetadata.width),
-        height: Math.min(200, baseMetadata.height),
-        fit: "cover",
+        width: baseMetadata.width,
+        height: baseMetadata.height,
+        fit: "contain",
       })
       .toBuffer();
 
@@ -220,7 +221,6 @@ const applyWatermark = async (imageBuffer) => {
           input: logoBuffer,
           gravity: "center",
           blend: "over",
-          opacity: 0.5,
         },
       ])
       .toBuffer();
