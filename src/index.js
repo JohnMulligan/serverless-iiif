@@ -18,15 +18,20 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   const queryStringParameters = event.queryStringParameters;
 
   if (shaKey) {
-    const req_auth = event.headers.authorization;
-    if (!req_auth) {
+
+    // const req_auth = event.headers.authorization;
+    const cookie = event.headers.Cookies
+    const access_token = cookie.match(/(?:^|;\s*)access=([^;]*)/)
+    const token = access_token ? access_token[1] : null;
+  if (!token) {
+
       const resp = {
         statusCode: 401,
         statusDescription: "No Credentials Provided",
       };
       return resp;
     }
-    const authorized = await auth.authorize(req_auth);
+    const authorized = await auth.authorize(token);
     if (authorized.statusCode != 200) {
       return authorized;
     }
