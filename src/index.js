@@ -53,11 +53,57 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
       headers: { Location: location },
       body: "Redirecting to info.json",
     };
+  } else if (!validateSize(event?.requestContext?.http?.path)) {    
+      // Return a 403 Forbidden response
+      response = {
+        statusCode: 403,
+        body: "Requested image size is not permitted",
+      };
   } else {
-    response = await handleResourceRequestFunc(event, context);
+      response = await handleResourceRequestFunc(event, context);
   }
   return addCorsHeaders(event, response);
 });
+
+function validateSize(path) {
+  
+  const pathParts = path.split('/');
+  const size = pathParts[5];
+
+  // 'max' and '^max' case 
+  if (size.includes('max')) {
+      return false; // Not permitted
+  }
+  
+  // percentage 'pct:n' or '^pct:n' case
+  if (size.includes('pct:')) {
+      const percentage = parseFloat(size.split(':')[1]);
+      return percentage <= 50; // Allow only up to 50% of image?
+  }
+  
+  //'w,h' or '^w,h' or '!w,h', or '^!w,h' case 
+  if (size.includes(',') && !size.startsWith(',') && !size.endsWith(',')) {
+      const [width, height] = size.split(',').map(Number);
+      const area = width * height;
+      return area <= 262144; // 512*512
+  }
+  
+  //'w,' or '^w,' case (width only)
+  if (size.includes(',') && !size.startsWith(',') && size.endsWith(',')) {
+      const width = parseInt(size.split(',')[0]);
+      return width <= 512;
+  }
+  
+  //',h' or '^,h' case (height only)
+  if (size.includes(',') && size.startsWith(',')) {
+      const height = parseInt(size.split(',')[1]);
+      return height <= 512;
+  }
+  
+  // Default: reject other formats
+  return false;
+
+}
 
 const handleServiceDiscoveryRequestFunc = () => {
   return {
@@ -123,6 +169,7 @@ const handleResourceRequestFunc = async (event, context) => {
   let resource;
   try {
     const uri = getUri(event);
+
     const result = await executeResource(
       uri,
       streamResolver,
