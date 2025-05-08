@@ -23,4 +23,6 @@ default:
         SharpLayer="INTERNAL"
         SourceBucket=""
         DevEnv="false"
+        WaterMarkS3Key=""
+        ShaKey:""
       image_repositories: []

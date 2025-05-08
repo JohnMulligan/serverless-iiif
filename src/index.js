@@ -193,16 +193,29 @@ const makeResponse = async (result, event) => {
 
   let image_data = res_body;
   image_data = await applyWatermark(image_data);
-
-  return {
+  
+  const devEnv = process.env.devEnv;
+  if (devEnv == "true") {
+    console.log("RUNNING IN DEVELOPMENT MODE");
+    image_data = Buffer.from(image_data).toString("base64");
+  }
+  
+  const corsAllowOrigin = process.env.corsAllowOrigin;
+  
+  const final_resp={
     statusCode: 200,
     headers: {
       "Content-Type": result.contentType,
       Link: linkHeaders.length > 0 ? linkHeaders.join(",") : undefined,
+      "Access-Control-Allow-Origin":corsAllowOrigin
     },
     isBase64Encoded: true,
-    body: Buffer.from(image_data).toString("base64"),
+    body: image_data
   };
+  
+//   console.log(final_resp)
+
+  return final_resp;
 };
 
 module.exports = {
