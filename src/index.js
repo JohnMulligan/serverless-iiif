@@ -230,39 +230,43 @@ const streamToBuffer = async (stream) => {
 
 const applyWatermark = async (imageBuffer) => {
   try {
-    //  Fetch the image from S3
+    // Fetch the watermark logo from S3
     const command = new GetObjectCommand({
       Bucket: process.env.tiffBucket,
       Key: "road_logo_white.svg",
     });
 
     const { Body } = await s3.send(command);
+    const bodyBuffer =  await streamToBuffer(Body);
 
-    const bodyBuffer =
-      Body instanceof Buffer ? Body : await streamToBuffer(Body);
-
+    // Get base image dimensions
     const baseMetadata = await sharp(imageBuffer).metadata();
+    
+    // Calculate watermark size (e.g. 20% of the base image width)
+    const watermarkWidth = Math.round(baseMetadata.width);
 
-    // Resize the logo according to the calculated dimensions
+    // Resize the logo with calculated width while maintaining aspect ratio
     const logoBuffer = await sharp(bodyBuffer)
       .resize({
         width: baseMetadata.width,
         height: baseMetadata.height,
-        fit: "contain",
+        fit: 'fill',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
       })
       .toBuffer();
 
+    // Apply the watermark
     return await sharp(imageBuffer)
       .composite([
         {
           input: logoBuffer,
-          gravity: "center",
-          blend: "over",
-        },
+          gravity: 'center',
+          blend: 'over'
+        }
       ])
       .toBuffer();
   } catch (err) {
-    console.error("Error applying watermark:", err);
+    console.error('Error applying watermark:', err);
     throw err;
   }
 };
@@ -278,7 +282,7 @@ const makeResponse = async (result, event) => {
   let image_data = res_body;
   
   if (!event?.requestContext?.http?.path.endsWith('info.json')) {
-//     image_data = await applyWatermark(image_data);
+    image_data = await applyWatermark(image_data);
     const devEnv = process.env.devEnv;
     if (devEnv == "true") {
       console.log("RUNNING IN DEVELOPMENT MODE");
