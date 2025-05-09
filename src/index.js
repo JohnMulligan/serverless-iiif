@@ -16,13 +16,38 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
   const shaKey = process.env.shaKey;
   const queryStringParameters = event.queryStringParameters;
-
+  
+  let response;
+  
+  if (event.requestContext?.http?.method === "OPTIONS") {
+    response = {
+      statusCode: 204,
+      body: null,
+      headers: {
+        "Access-Control-Allow-Origin":"*",
+        "Access-Control-Allow-Headers":"*"
+      }
+    };
+    return response
+  }
+  
+  
+  
   if (shaKey) {
 
     // const req_auth = event.headers.authorization;
-    const cookie = event.headers.Cookies
-    const access_token = cookie.match(/(?:^|;\s*)access=([^;]*)/)
-    const token = access_token ? access_token[1] : null;
+    let token
+    if (event.headers.cookie){
+      const cookie = event.headers.cookie;
+      const access_token = cookie.match(/(?:^|;\s*)access=([^;]*)/);
+      token = access_token ? access_token[1] : null;
+      
+   } else if (event.headers.authorization) {
+      const auth_header = event.headers.authorization
+      token = auth_header
+   }
+//     
+//     
   if (!token) {
 
       const resp = {
@@ -32,16 +57,16 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
       return resp;
     }
     const authorized = await auth.authorize(token);
+//     console.log("AUTH-->",token,authorized)
     if (authorized.statusCode != 200) {
       return authorized;
     }
   }
+  
+  
+//   console.log("IS INFO.JSON",event?.requestContext?.http?.path.endsWith('info.json'))
 
-  let response;
-
-  if (event.requestContext?.http?.method === "OPTIONS") {
-    response = { statusCode: 204, body: null };
-  } else if (event?.requestContext?.http?.path === "/") {
+  if (event?.requestContext?.http?.path === "/") {
     response = handleServiceDiscoveryRequestFunc();
   } else if (/^\/iiif\/\d+\/?$/.test(event?.requestContext?.http?.path)) {
     return {
@@ -57,19 +82,26 @@ const handleRequestFunc = streamifyResponse(async (event, context) => {
       headers: { Location: location },
       body: "Redirecting to info.json",
     };
-  } else if (!validateSize(event?.requestContext?.http?.path)) {    
+  } else if (!(event?.requestContext?.http?.path.endsWith('info.json')) && !validateSize(event?.requestContext?.http?.path)) {    
+      
+      
       // Return a 403 Forbidden response
       response = {
         statusCode: 403,
         body: "Requested image size is not permitted",
       };
-  } else {
+  }
+   else {
       response = await handleResourceRequestFunc(event, context);
   }
   return addCorsHeaders(event, response);
 });
 
 function validateSize(path) {
+  
+//   if (path.endsWith('info.json')){
+//     return true
+//   }
   
   const pathParts = path.split('/');
   const size = pathParts[5];
@@ -244,13 +276,16 @@ const makeResponse = async (result, event) => {
   let res_body = result.body;
 
   let image_data = res_body;
-  image_data = await applyWatermark(image_data);
   
-  const devEnv = process.env.devEnv;
-  if (devEnv == "true") {
-    console.log("RUNNING IN DEVELOPMENT MODE");
-    image_data = Buffer.from(image_data).toString("base64");
+  if (!event?.requestContext?.http?.path.endsWith('info.json')) {
+//     image_data = await applyWatermark(image_data);
+    const devEnv = process.env.devEnv;
+    if (devEnv == "true") {
+      console.log("RUNNING IN DEVELOPMENT MODE");
+      image_data = Buffer.from(image_data).toString("base64");
+    }
   }
+  
   
   const corsAllowOrigin = process.env.corsAllowOrigin;
   
@@ -259,7 +294,7 @@ const makeResponse = async (result, event) => {
     headers: {
       "Content-Type": result.contentType,
       Link: linkHeaders.length > 0 ? linkHeaders.join(",") : undefined,
-      "Access-Control-Allow-Origin":corsAllowOrigin
+      "Access-Control-Allow-Origin":"*"
     },
     isBase64Encoded: true,
     body: image_data

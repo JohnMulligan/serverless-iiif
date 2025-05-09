@@ -69,7 +69,7 @@ function jwt_decode(token, key, noVerify, algorithm) {
         }
 
         if (payload.exp && Date.now() > payload.exp*1000) {
-            console.log('token expired')
+            console.log('token expired',Date.now(),payload.exp)
             payload['k']='token expired'
             throw new Error('Token expired')
         }
